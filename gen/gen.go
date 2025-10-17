@@ -152,6 +152,9 @@ type Config struct {
 
 	// ParseFuncBody whether swag should parse api info inside of funcs
 	ParseFuncBody bool
+
+	// LenientTypeResolution allows swagger generation to continue when types cannot be resolved
+	LenientTypeResolution bool
 }
 
 // Build builds swagger json file  for given searchDir and mainAPIFile. Returns json.
@@ -213,6 +216,7 @@ func (g *Gen) Build(config *Config) error {
 		swag.SetTags(config.Tags),
 		swag.SetCollectionFormat(config.CollectionFormat),
 		swag.SetPackagePrefix(config.PackagePrefix),
+		swag.SetLenientTypeResolution(config.LenientTypeResolution),
 	)
 
 	p.PropNamingStrategy = config.PropNamingStrategy

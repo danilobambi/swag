@@ -185,6 +185,10 @@ type Parser struct {
 
 	// UseStructName Dont use those ugly full-path names when using dependency flag
 	UseStructName bool
+
+	// LenientTypeResolution allows swagger generation to continue when encountering types
+	// that cannot be resolved due to missing imports, falling back to generic object schemas
+	LenientTypeResolution bool
 }
 
 // FieldParserFactory create FieldParser.
@@ -367,6 +371,13 @@ func SetOverrides(overrides map[string]string) func(parser *Parser) {
 func SetCollectionFormat(collectionFormat string) func(*Parser) {
 	return func(p *Parser) {
 		p.collectionFormatInQuery = collectionFormat
+	}
+}
+
+// SetLenientTypeResolution sets whether to continue parsing when types cannot be resolved.
+func SetLenientTypeResolution(lenient bool) func(*Parser) {
+	return func(p *Parser) {
+		p.LenientTypeResolution = lenient
 	}
 }
 
@@ -1241,6 +1252,10 @@ func (parser *Parser) getTypeSchema(typeName string, file *ast.File, ref bool) (
 
 	typeSpecDef := parser.packages.FindTypeSpec(typeName, file)
 	if typeSpecDef == nil {
+		if parser.LenientTypeResolution {
+			parser.debug.Printf("Warning: cannot find type definition: %s, using generic object schema", typeName)
+			return PrimitiveSchema(OBJECT), nil
+		}
 		return nil, fmt.Errorf("cannot find type definition: %s", typeName)
 	}
 

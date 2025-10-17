@@ -105,6 +105,42 @@ func TestOverrides_getTypeSchema(t *testing.T) {
 	})
 }
 
+func TestLenientTypeResolution_getTypeSchema(t *testing.T) {
+	t.Parallel()
+
+	t.Run("Strict mode fails on missing type", func(t *testing.T) {
+		t.Parallel()
+
+		p := New(SetLenientTypeResolution(false))
+		_, err := p.getTypeSchema("sql.NullInt64", nil, false)
+		if assert.Error(t, err) {
+			assert.Equal(t, "cannot find type definition: sql.NullInt64", err.Error())
+		}
+	})
+
+	t.Run("Lenient mode allows missing type", func(t *testing.T) {
+		t.Parallel()
+
+		p := New(SetLenientTypeResolution(true))
+		schema, err := p.getTypeSchema("sql.NullInt64", nil, false)
+		if assert.NoError(t, err) {
+			assert.NotNil(t, schema)
+			assert.True(t, schema.Type.Contains("object"), "should fallback to object type when type cannot be resolved")
+		}
+	})
+
+	t.Run("Lenient mode with custom type", func(t *testing.T) {
+		t.Parallel()
+
+		p := New(SetLenientTypeResolution(true))
+		schema, err := p.getTypeSchema("github.com/some/package.CustomType", nil, false)
+		if assert.NoError(t, err) {
+			assert.NotNil(t, schema)
+			assert.True(t, schema.Type.Contains("object"), "should fallback to object type for custom types")
+		}
+	})
+}
+
 func TestParser_ParseDefinition(t *testing.T) {
 	p := New()
 
